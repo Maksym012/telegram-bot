@@ -25,7 +25,8 @@ LINKS_MAP = {
     'https://t.me/tribute/app?startapp=sp5Q': 'https://t.me/tribute/app?startapp=sxAX',
     'https://bingxdao.com/invite/P8XF2F': URL_BINGX,
     'https://t.me/+MTQNJMUsSiowOWU6': 'https://t.me/bratvadaily',
-    'trusteeglobal.com/ru/?r=OXvE1XQ90Bb': 'https://trusteeglobal.com/?r=0aTeQwzM9Bb'
+    'trusteeglobal.com/ru/?r=OXvE1XQ90Bb': 'https://trusteeglobal.com/?r=0aTeQwzM9Bb',
+    'https://www.weex.com/ru/register?vipCode=nftz': URL_WEEX # Новая замена
 }
 
 # Шаблон кнопок
@@ -72,7 +73,7 @@ async def handler(event):
     text = re.sub(r'SHARKINEWS', MY_CHANNEL_LINK, text, flags=re.IGNORECASE)
     text = text.replace("SHARK|NEWS", MY_CHANNEL_LINK)
 
-    # 2. Замена всех ссылок из словаря (включая Trustee)
+    # 2. Замена всех ссылок из словаря (включая Trustee и WEEX nftz)
     for old, new in LINKS_MAP.items():
         text = text.replace(old, new)
 
@@ -80,11 +81,12 @@ async def handler(event):
 
     try:
         # 3. Логика пересылки
-        if "Доступ в лучший сигнальный канал" in text or "Доступ к обучению" in text:
-            await client.send_file(TARGET_CHANNEL, VIP_IMG, caption=NEW_EDUCATION_TEXT, parse_mode='md')
-        
-        elif "300 халявных альткоинов" in text or "WEEX" in text:
+        # Проверка на WEEX (старый текст или старая ссылка nftz)
+        if "300 халявных альткоинов" in text or "WEEX" in text or "vipCode=nftz" in text:
             await client.send_file(TARGET_CHANNEL, WEEX_IMG, caption=NEW_WEEX_TEXT, parse_mode='md')
+        
+        elif "Доступ в лучший сигнальный канал" in text or "Доступ к обучению" in text:
+            await client.send_file(TARGET_CHANNEL, VIP_IMG, caption=NEW_EDUCATION_TEXT, parse_mode='md')
         
         elif "bingxdao.com" in text:
             await client.send_file(TARGET_CHANNEL, BINGX_IMG, caption=text, parse_mode='md')
@@ -93,20 +95,18 @@ async def handler(event):
             await client.send_file(TARGET_CHANNEL, ITOGI_IMG, caption=text, buttons=MY_BUTTONS, parse_mode='md')
         
         elif "Доброе утро" in text:
-            # Отправляем оригинальное медиа (фото или видео) с нашими кнопками
             media = event.message.media if event.message.media else None
             await client.send_file(TARGET_CHANNEL, media, caption=text, buttons=MY_BUTTONS, parse_mode='md')
         
         else:
-            # Универсальная отправка для всего остального (фото, видео, текст)
             if event.message.media:
                 await client.send_file(TARGET_CHANNEL, event.message.media, caption=text, parse_mode='md')
             else:
                 await client.send_message(TARGET_CHANNEL, text, parse_mode='md')
         
-        print("Пост переслан и обработан!")
+        print("Пост переслан!")
     except Exception as e:
-        print(f"Ошибка при обработке: {e}")
+        print(f"Ошибка: {e}")
 
 # Бесконечный цикл работы
 while True:
@@ -118,4 +118,3 @@ while True:
     except Exception as e:
         print(f"Сбой: {e}. Рестарт через 10 сек...")
         time.sleep(10)
-
