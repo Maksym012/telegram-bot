@@ -20,7 +20,7 @@ ITOGI_IMG = "itogi_new.png"
 URL_WEEX = "https://weex.com/register?vipCode=6ultl"
 URL_BINGX = "https://bingxdao.com/invite/FCS8N1/"    
 
-# Словарь замен (добавили Trustee сюда для порядка)
+# Словарь замен
 LINKS_MAP = {
     'https://t.me/tribute/app?startapp=sp5Q': 'https://t.me/tribute/app?startapp=sxAX',
     'https://bingxdao.com/invite/P8XF2F': URL_BINGX,
@@ -31,8 +31,11 @@ LINKS_MAP = {
 # Шаблон кнопок
 MY_BUTTONS = [[Button.url("WEEX ↗️", URL_WEEX), Button.url("BINGX ↗️", URL_BINGX)]]
 
+# Гиперссылка для названия
+MY_CHANNEL_LINK = "[BRATVA|DAILY](https://t.me/bratvadaily)"
+
 # Тексты
-NEW_WEEX_TEXT = """🔥 Забирай халявные монеты WEEX🔥 
+NEW_WEEX_TEXT = f"""🔥 Забирай халявные монеты WEEX🔥 
 
 По моей ссылке будут минимальные комиссии на спотовую и фьючерсную торговлю отличные условия для трейдеров.
 
@@ -40,7 +43,7 @@ NEW_WEEX_TEXT = """🔥 Забирай халявные монеты WEEX🔥
 👉 Присоединиться к WEEX
 💥 Регистрируйтесь сейчас по коду: 6ultl
 
-Зарегистрируйтесь, чтобы получить денежное вознаграждение по моей ссылке ⤵️
+Зарегистрируйтесь, чтобы получить денежное вознаждение по моей ссылке ⤵️
 https://weex.com/register?vipCode=6ultl"""
 
 NEW_EDUCATION_TEXT = """Доступ к обучению :
@@ -56,25 +59,22 @@ client = TelegramClient('my_session', api_id, api_hash)
 
 @client.on(events.NewMessage(chats=SOURCE_CHANNEL))
 async def handler(event):
-    # 1. Получаем текст сообщения
     text = event.message.text or ""
     if "googleusercontent.com" in text.lower(): return
 
-    # 2. Очистка рекламы и ребрендинг (SHARKINEWS и SHARK|NEWS)
+    # 1. Очистка рекламы и ребрендинг в гиперссылку
     text = re.split(r'\n?\s*РЕКЛАМА', text, flags=re.IGNORECASE)[0].strip()
-    text = re.sub(r'SHARKINEWS', 'BRATVA|DAILY', text, flags=re.IGNORECASE)
-    text = text.replace("SHARK|NEWS", "BRATVA|DAILY")
+    text = re.sub(r'SHARKINEWS', MY_CHANNEL_LINK, text, flags=re.IGNORECASE)
+    text = text.replace("SHARK|NEWS", MY_CHANNEL_LINK)
 
-    # 3. Замена всех ссылок (включая Trustee Plus)
+    # 2. Замена всех ссылок из словаря (включая Trustee)
     for old, new in LINKS_MAP.items():
         text = text.replace(old, new)
 
     if not text and not event.message.media: return
 
     try:
-        # 4. Логика пересылки с учетом разных типов постов
-        # Используем parse_mode='md' чтобы убрать звездочки
-        
+        # 3. Логика пересылки
         if "Доступ в лучший сигнальный канал" in text or "Доступ к обучению" in text:
             await client.send_file(TARGET_CHANNEL, VIP_IMG, caption=NEW_EDUCATION_TEXT, parse_mode='md')
         
@@ -85,32 +85,31 @@ async def handler(event):
             await client.send_file(TARGET_CHANNEL, BINGX_IMG, caption=text, parse_mode='md')
         
         elif "#Итоги_Дня" in text:
-            # Здесь меняем SHARK на BRATVA (если вдруг регекс пропустил)
-            text = text.replace("SHARK|NEWS", "BRATVA|DAILY")
             await client.send_file(TARGET_CHANNEL, ITOGI_IMG, caption=text, buttons=MY_BUTTONS, parse_mode='md')
         
         elif "Доброе утро" in text:
-            await client.send_file(TARGET_CHANNEL, event.message.media if event.message.media else None, caption=text, buttons=MY_BUTTONS, parse_mode='md')
+            # Отправляем оригинальное медиа (фото или видео) с нашими кнопками
+            media = event.message.media if event.message.media else None
+            await client.send_file(TARGET_CHANNEL, media, caption=text, buttons=MY_BUTTONS, parse_mode='md')
         
         else:
-            # Универсальная отправка: и фото, и видео, и просто текст
-            # event.message.media подхватит и видео, и фото автоматически
+            # Универсальная отправка для всего остального (фото, видео, текст)
             if event.message.media:
                 await client.send_file(TARGET_CHANNEL, event.message.media, caption=text, parse_mode='md')
             else:
                 await client.send_message(TARGET_CHANNEL, text, parse_mode='md')
-                
-        print("Пост успешно обработан и переслан!")
+        
+        print("Пост переслан и обработан!")
     except Exception as e:
-        print(f"Ошибка при обработке поста: {e}")
+        print(f"Ошибка при обработке: {e}")
 
-# Цикл запуска
+# Бесконечный цикл работы
 while True:
     try:
-        print("Попытка запуска бота...")
+        print("Запуск бота...")
         client.start()
-        print("Бот успешно запущен и работает!")
+        print("Бот в сети!")
         client.run_until_disconnected()
     except Exception as e:
-        print(f"Ошибка: {e}. Перезапуск через 10 секунд...")
+        print(f"Сбой: {e}. Рестарт через 10 сек...")
         time.sleep(10)
