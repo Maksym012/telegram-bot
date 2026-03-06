@@ -68,17 +68,22 @@ async def handler(event):
     text = event.message.text or ""
     if "googleusercontent.com" in text.lower(): return
 
-    # 1. Очистка рекламы и ребрендинг в гиперссылку
-    text = re.split(r'\n?\s*РЕКЛАМА', text, flags=re.IGNORECASE)[0].strip()
+    # 1. ПОЛНАЯ БЛОКИРОВКА РЕКЛАМЫ
+    # Если в тексте есть слово "реклама", выходим из функции
+    if "реклама" in text.lower():
+        print("Обнаружена реклама, пост пропущен.")
+        return
+
+    # 2. Ребрендинг в гиперссылку
     text = re.sub(r'SHARKINEWS', MY_CHANNEL_LINK, text, flags=re.IGNORECASE)
     text = text.replace("SHARK|NEWS", MY_CHANNEL_LINK)
 
-    # 2. Замена всех ссылок из словаря (включая Trustee и WEEX nftz)
+    # 3. Замена всех ссылок из словаря (включая Trustee и WEEX nftz)
     for old, new in LINKS_MAP.items():
         text = text.replace(old, new)
 
     if not text and not event.message.media: return
-
+        
     try:
         # 3. Логика пересылки
         # Проверка на WEEX (старый текст или старая ссылка nftz)
@@ -118,3 +123,4 @@ while True:
     except Exception as e:
         print(f"Сбой: {e}. Рестарт через 10 сек...")
         time.sleep(10)
+
